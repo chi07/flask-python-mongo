@@ -1,0 +1,12 @@
+flask==1.1.2
+flask-restful==0.3.8
+python-rapidjson==1.0.0
+dataclasses==0.6
+validator==0.7.0
+pymongo==3.11.3
+python-dotenv==0.15.0
+dnspython==2.1.0
+flask-api==2.0
+pyjwt==2.0.1
+pre-commit==2.10
+Flask-Cors==3.0.10

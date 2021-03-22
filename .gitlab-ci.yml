@@ -1,0 +1,40 @@
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_IMAGE: chibk/cdp-account-service:v1
+  SERVER: 35.222.67.232
+  LOGIN_USER: root
+  RUN_CONTAINER_COMMAND: "sudo docker rm -f cdp-account-service && sudo docker run --name cdp-account-service -d -e MONGO_URI=$MONGO_URI -e MONGO_DB_NAME=$MONGO_DB_NAME -e DEBUG=true -p 3001:3001 --pull always $DOCKER_IMAGE"
+services:
+  - docker:dind
+stages:
+  - build
+  - deploy
+build:
+  stage: build
+  before_script:
+    - docker images
+    - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin
+  script:
+   - docker build -t $DOCKER_IMAGE .
+   - docker push $DOCKER_IMAGE
+  tags:
+    - customer-data-platform
+  only:
+    - master
+deploy:
+    stage: deploy
+    before_script:
+      # Setup SSH deploy keys
+      - mkdir -p ~/.ssh
+      - chmod -R 700 ~/.ssh/
+      - ssh-keyscan $SERVER >> ~/.ssh/known_hosts
+      - chmod 644 ~/.ssh/known_hosts
+      - (umask  077 ; echo $SSH_KEY | base64 -d > ~/.ssh/id_rsa)
+
+    script:
+        - ssh $LOGIN_USER@$SERVER "sudo docker rm -f cdp-account-service && sudo docker run --name cdp-account-service -d -e MONGO_URI=$MONGO_URI -e MONGO_DB_NAME=$MONGO_DB_NAME -e DEBUG=true -p 3001:3001 --pull always $DOCKER_IMAGE"
+    tags:
+      - customer-data-platform
+    only:
+      - master
